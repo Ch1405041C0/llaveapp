@@ -45,14 +45,14 @@ import com.example.llave360.ui.components.*
           Text(money(product.price * quantity), fontWeight = FontWeight.SemiBold)
         }
       }
-      item { Card(Modifier.fillMaxWidth().padding(top = 12.dp)) { Row(Modifier.fillMaxWidth().padding(18.dp), horizontalArrangement = Arrangement.SpaceBetween) { Column { Text("Total estimado", style = MaterialTheme.typography.labelMedium); Text(money(state.total), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }; Column(horizontalAlignment = Alignment.End) { Text("Saldo", style = MaterialTheme.typography.labelMedium); Text(money(state.remaining), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) } } } }
+      item { Card(Modifier.fillMaxWidth().padding(top = 12.dp)) { Row(Modifier.fillMaxWidth().padding(18.dp), horizontalArrangement = Arrangement.SpaceBetween) { Column { Text("Inversión estimada", style = MaterialTheme.typography.labelMedium); Text(money(state.total), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) } } } }
     }
     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
       OutlinedButton(back, Modifier.fillMaxWidth()) { Text("EDITAR PEDIDO") }
       Button(onClick = {
         val detail = state.selectedProducts.joinToString("\n") { (product, quantity) -> "• $quantity x ${product.name}: ${money(product.price * quantity)}" }
         val idea = state.ideaBrief.takeIf { it.isNotBlank() }?.let { "\n\nMi idea: $it" }.orEmpty()
-        val message = Uri.encode("Hola, quiero solicitar una propuesta de Llave 360.\n\nModelo: ${state.businessModel}\nEspacio: ${state.space}$idea\n\n$detail\n\nTotal estimado: ${money(state.total)}")
+        val message = Uri.encode("Hola, quiero solicitar una propuesta de Llave 360.\n\nModelo: ${state.businessModel}\nEspacio: ${state.space}$idea\n\n$detail\n\nInversión estimada: ${money(state.total)}")
         onRequestSubmitted()
         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/541164627789?text=$message")))
       }, modifier = Modifier.fillMaxWidth()) { Text("SOLICITAR PROPUESTA") }
