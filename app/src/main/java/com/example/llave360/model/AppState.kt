@@ -1,0 +1,14 @@
+package com.example.llave360.model
+
+data class AppState(
+  val businessModel: String = "Kiosko 360",
+  val space: String = "Local a la calle",
+  val capital: Int = 1_500_000,
+  val ideaBrief: String = "",
+  val quantities: Map<String, Int> = emptyMap(),
+) {
+  val selectedProducts = productsFor(businessModel).mapNotNull { product -> quantities[product.id]?.takeIf { it > 0 }?.let { product to it } }
+  val total = selectedProducts.sumOf { (product, quantity) -> product.price * quantity }
+  val remaining = capital - total
+  val canContinue = selectedProducts.isNotEmpty() && remaining >= 0
+}
