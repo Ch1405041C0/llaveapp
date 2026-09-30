@@ -9,6 +9,5 @@ data class AppState(
 ) {
   val selectedProducts = productsFor(businessModel).mapNotNull { product -> quantities[product.id]?.takeIf { it > 0 }?.let { product to it } }
   val total = selectedProducts.sumOf { (product, quantity) -> product.price * quantity }
-  val remaining = capital - total
-  val canContinue = selectedProducts.isNotEmpty() && remaining >= 0
+  val canContinue = selectedProducts.isNotEmpty()
 }
