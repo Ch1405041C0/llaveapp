@@ -25,11 +25,11 @@ private val options = listOf(750_000, 1_500_000, 2_500_000, 4_000_000)
 
 @Composable
 fun CapitalScreen(state: AppState, select: (Int) -> Unit, continueToSpace: () -> Unit, back: () -> Unit) = Column(Modifier.fillMaxSize()) {
-  AppHeader("02 / CAPITAL")
+  AppHeader("02 / INVERSIÓN")
   Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.SpaceBetween) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-      Text("¿Con qué capital contás?", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-      Text("Partimos de tu inversión para diseñar una propuesta posible.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+      Text("¿Qué inversión tenés en mente?", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+      Text("La usamos como referencia para orientarte. No limita lo que podés sumar a tu propuesta.", color = MaterialTheme.colorScheme.onSurfaceVariant)
       options.forEach { amount ->
         val isSelected = state.capital == amount
         Card(
@@ -46,9 +46,9 @@ fun CapitalScreen(state: AppState, select: (Int) -> Unit, continueToSpace: () ->
             Column(Modifier.weight(1f)) {
               Text(money(amount), fontWeight = FontWeight.Bold)
               Text(
-                if (amount == 1_500_000) "Kiosko inicial recomendado" else "Presupuesto de inversión",
+                "Referencia de inversión",
                 style = MaterialTheme.typography.bodySmall,
-                color = if (amount == 1_500_000) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant
               )
             }
             Box(
