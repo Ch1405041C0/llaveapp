@@ -46,16 +46,19 @@ fun BuilderScreen(
         horizontalArrangement = Arrangement.SpaceBetween,
       ) {
         Column {
-          Text("Disponible", style = MaterialTheme.typography.labelMedium)
+          Text("INVERSIÓN ESTIMADA", style = MaterialTheme.typography.labelMedium)
           Text(
-            money(state.remaining),
-            color = if (state.remaining < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+            money(state.total),
+            color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.Bold,
           )
-        }
-        Column(horizontalAlignment = Alignment.End) {
-          Text("Seleccionado", style = MaterialTheme.typography.labelMedium)
-          Text(money(state.total), fontWeight = FontWeight.Bold)
+          if (state.total > state.capital) {
+            Text(
+              "Superaste la inversión de referencia. Podés seguir sumando equipamiento.",
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+          }
         }
       }
     }
@@ -81,7 +84,7 @@ fun BuilderScreen(
       }
       item {
         Text("Equipamiento", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        Text("Sumá módulos hasta completar tu inversión.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("Sumá los módulos que quieras. La inversión estimada se actualiza automáticamente.", color = MaterialTheme.colorScheme.onSurfaceVariant)
       }
       items(productsFor(state.businessModel), key = { it.id }) { product ->
         ProductCard(product, state.quantities[product.id] ?: 0, add, remove)
