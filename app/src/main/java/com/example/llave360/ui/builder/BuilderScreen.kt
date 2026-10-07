@@ -25,7 +25,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.llave360.model.AppState
 import com.example.llave360.model.Product
-import com.example.llave360.model.productsFor
 import com.example.llave360.ui.components.AppHeader
 import com.example.llave360.ui.components.money
 
@@ -86,7 +85,7 @@ fun BuilderScreen(
         Text("Equipamiento", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         Text("Sumá los módulos que quieras. La inversión estimada se actualiza automáticamente.", color = MaterialTheme.colorScheme.onSurfaceVariant)
       }
-      items(productsFor(state.businessModel), key = { it.id }) { product ->
+      items(state.currentProducts, key = { it.id }) { product ->
         ProductCard(product, state.quantities[product.id] ?: 0, add, remove)
       }
     }

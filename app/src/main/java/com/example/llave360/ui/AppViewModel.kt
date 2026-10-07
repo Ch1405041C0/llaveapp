@@ -7,8 +7,10 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.llave360.data.RemoteBusiness
+import com.example.llave360.data.RemoteProduct
 import com.example.llave360.data.SupabaseCatalog
 import com.example.llave360.model.AppState
+import com.example.llave360.model.Product
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -22,16 +24,26 @@ class AppViewModel : ViewModel() {
     var remoteBusinesses by mutableStateOf<List<RemoteBusiness>>(emptyList())
         private set
 
+    var remoteProducts by mutableStateOf<List<RemoteProduct>>(emptyList())
+        private set
+
     init {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val businesses = SupabaseCatalog.loadBusinesses()
+                val products = SupabaseCatalog.loadProducts()
 
                 remoteBusinesses = businesses
+                remoteProducts = products
 
                 Log.d(
                     "LLAVE360_SUPABASE",
                     "Negocios recibidos = ${businesses.size}: ${businesses.joinToString { it.name }}"
+                )
+
+                Log.d(
+                    "LLAVE360_SUPABASE",
+                    "Productos recibidos = ${products.size}: ${products.joinToString { it.name }}"
                 )
             } catch (e: Exception) {
                 Log.e(
@@ -44,9 +56,33 @@ class AppViewModel : ViewModel() {
     }
 
     fun selectModel(model: String) {
+
+        val business = remoteBusinesses.firstOrNull {
+            it.name == model
+        }
+
+        val productsForBusiness =
+            if (business != null) {
+                remoteProducts
+                    .filter { it.businessId == business.id }
+                    .map { remote ->
+                        Product(
+                            id = "remote_${remote.id}",
+                            name = remote.name,
+                            category = "Equipamiento",
+                            price = remote.price,
+                            description = remote.description,
+                            imageRes = null
+                        )
+                    }
+            } else {
+                emptyList()
+            }
+
         state = state.copy(
             businessModel = model,
-            quantities = emptyMap()
+            quantities = emptyMap(),
+            availableProducts = productsForBusiness
         )
     }
 
