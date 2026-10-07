@@ -37,22 +37,82 @@ fun MainNavigation() {
 
   // Evita que Android cierre la actividad al volver desde cualquiera de las
   // pantallas del configurador: primero vuelve a la pantalla anterior.
-  BackHandler(enabled = backStack.size > 1) { backStack.removeLastOrNull() }
+  BackHandler(enabled = backStack.size > 1) {
+    backStack.removeLastOrNull()
+  }
 
   NavDisplay(
     backStack = backStack,
-    onBack = { if (backStack.size > 1) backStack.removeLastOrNull() },
+    onBack = {
+      if (backStack.size > 1) backStack.removeLastOrNull()
+    },
     entryProvider =
       entryProvider {
-        entry<Home> { HomeScreen { backStack.add(BusinessModel) } }
-        entry<BusinessModel> { ModelScreen(appViewModel.state, appViewModel::selectModel, appViewModel::updateIdeaBrief, { backStack.add(Capital) }) { backStack.removeLastOrNull() } }
-        entry<Capital> { CapitalScreen(appViewModel.state, appViewModel::selectCapital, { backStack.add(Space) }) { backStack.removeLastOrNull() } }
-        entry<Space> { SpaceScreen(appViewModel.state, appViewModel::selectSpace, { backStack.add(Builder) }) { backStack.removeLastOrNull() } }
-        entry<Builder> { BuilderScreen(appViewModel.state, appViewModel::addProduct, appViewModel::removeProduct, { backStack.add(Confirmation) }) { backStack.removeLastOrNull() } }
-        entry<Confirmation> { ConfirmationScreen(appViewModel.state, { appViewModel.isWhatsAppPending = true }) { backStack.removeLastOrNull() } }
+
+        entry<Home> {
+          HomeScreen {
+            backStack.add(BusinessModel)
+          }
+        }
+
+        entry<BusinessModel> {
+          ModelScreen(
+            appViewModel.state,
+            appViewModel.remoteBusinesses,
+            appViewModel::selectModel,
+            appViewModel::updateIdeaBrief,
+            { backStack.add(Capital) }
+          ) {
+            backStack.removeLastOrNull()
+          }
+        }
+
+        entry<Capital> {
+          CapitalScreen(
+            appViewModel.state,
+            appViewModel::selectCapital,
+            { backStack.add(Space) }
+          ) {
+            backStack.removeLastOrNull()
+          }
+        }
+
+        entry<Space> {
+          SpaceScreen(
+            appViewModel.state,
+            appViewModel::selectSpace,
+            { backStack.add(Builder) }
+          ) {
+            backStack.removeLastOrNull()
+          }
+        }
+
+        entry<Builder> {
+          BuilderScreen(
+            appViewModel.state,
+            appViewModel::addProduct,
+            appViewModel::removeProduct,
+            { backStack.add(Confirmation) }
+          ) {
+            backStack.removeLastOrNull()
+          }
+        }
+
+        entry<Confirmation> {
+          ConfirmationScreen(
+            appViewModel.state,
+            {
+              appViewModel.isWhatsAppPending = true
+            }
+          ) {
+            backStack.removeLastOrNull()
+          }
+        }
+
         entry<ThankYou> {
           ThankYouScreen {
             appViewModel.resetState()
+
             // Limpia el backstack y vuelve a Home
             while (backStack.size > 1) {
               backStack.removeLastOrNull()
