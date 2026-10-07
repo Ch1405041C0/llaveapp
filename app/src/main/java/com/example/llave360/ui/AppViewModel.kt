@@ -5,11 +5,33 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.example.llave360.model.AppState
+import android.util.Log
+import androidx.lifecycle.viewModelScope
+import com.example.llave360.data.SupabaseCatalog
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class AppViewModel : ViewModel() {
   var state by mutableStateOf(AppState())
     private set
   var isWhatsAppPending by mutableStateOf(false)
+init {
+    viewModelScope.launch(Dispatchers.IO) {
+        try {
+            val businesses = SupabaseCatalog.loadBusinesses()
+            Log.d(
+                "LLAVE360_SUPABASE",
+                "Negocios recibidos = ${businesses.size}: ${businesses.joinToString { it.name }}"
+            )
+        } catch (e: Exception) {
+            Log.e(
+                "LLAVE360_SUPABASE",
+                "Error consultando Supabase",
+                e
+            )
+        }
+    }
+}
 
 
 
