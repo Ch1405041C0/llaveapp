@@ -23,6 +23,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import com.example.llave360.model.AppState
 import com.example.llave360.model.Product
 import com.example.llave360.ui.components.AppHeader
@@ -113,14 +114,23 @@ private fun ProductCard(
 ) {
   Card(Modifier.fillMaxWidth()) {
     Column {
-      product.imageRes?.let {
+      if (!product.imageUrl.isNullOrBlank()) {
+    AsyncImage(
+        model = product.imageUrl,
+        contentDescription = product.name,
+        modifier = Modifier.fillMaxWidth().height(140.dp),
+        contentScale = ContentScale.Crop
+    )
+} else {
+    product.imageRes?.let {
         Image(
-          painter = painterResource(it),
-          contentDescription = null,
-          modifier = Modifier.fillMaxWidth().height(140.dp),
-          contentScale = ContentScale.Crop
+            painter = painterResource(it),
+            contentDescription = product.name,
+            modifier = Modifier.fillMaxWidth().height(140.dp),
+            contentScale = ContentScale.Crop
         )
-      }
+    }
+}
       Row(
         Modifier.fillMaxWidth().padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,

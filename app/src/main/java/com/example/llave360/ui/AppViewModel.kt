@@ -67,13 +67,14 @@ class AppViewModel : ViewModel() {
                     .filter { it.businessId == business.id }
                     .map { remote ->
                         Product(
-                            id = "remote_${remote.id}",
-                            name = remote.name,
-                            category = "Equipamiento",
-                            price = remote.price,
-                            description = remote.description,
-                            imageRes = null
-                        )
+    id = "remote_${remote.id}",
+    name = remote.name,
+    category = "Equipamiento",
+    price = remote.price,
+    description = remote.description,
+    imageRes = null,
+    imageUrl = remote.imageUrl
+)
                     }
             } else {
                 emptyList()

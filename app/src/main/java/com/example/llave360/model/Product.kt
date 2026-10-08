@@ -8,7 +8,8 @@ data class Product(
   val category: String,
   val price: Int,
   val description: String,
-  val imageRes: Int? = null
+  val imageRes: Int? = null,
+  val imageUrl: String? = null
 )
 
 data class BusinessModel(val name: String, val description: String, val imageRes: Int?)
