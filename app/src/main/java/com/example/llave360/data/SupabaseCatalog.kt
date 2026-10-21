@@ -1,6 +1,7 @@
 package com.example.llave360.data
 
 import org.json.JSONArray
+import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -18,6 +19,11 @@ data class RemoteProduct(
     val description: String,
     val price: Int,
     val imageUrl: String?
+)
+
+data class RequestItemInput(
+    val productId: Long,
+    val quantity: Int
 )
 
 object SupabaseCatalog {
@@ -76,19 +82,80 @@ object SupabaseCatalog {
         }
     }
 
+    fun createRequest(
+        clientName: String,
+        phone: String,
+        businessId: Long,
+        items: List<RequestItemInput>
+    ): Long {
+        require(clientName.isNotBlank()) {
+            "El nombre del cliente es obligatorio."
+        }
+
+        require(phone.isNotBlank()) {
+            "El teléfono es obligatorio."
+        }
+
+        require(items.isNotEmpty()) {
+            "La solicitud debe contener al menos un producto."
+        }
+
+        val itemsJson = JSONArray()
+
+        items.forEach { item ->
+            itemsJson.put(
+                JSONObject().apply {
+                    put("product_id", item.productId)
+                    put("quantity", item.quantity)
+                }
+            )
+        }
+
+        val body = JSONObject().apply {
+            put("p_client_name", clientName.trim())
+            put("p_phone", phone.trim())
+            put("p_business_id", businessId)
+            put("p_items", itemsJson)
+        }
+
+        val response = post(
+            endpoint =
+                "$SUPABASE_URL/rest/v1/rpc/create_request",
+            body = body.toString()
+        )
+
+        return response
+            .trim()
+            .trim('"')
+            .toLongOrNull()
+            ?: throw IllegalStateException(
+                "Supabase no devolvió el ID de la solicitud. Respuesta: $response"
+            )
+    }
+
     private fun get(endpoint: String): String {
-        val connection = URL(endpoint).openConnection() as HttpURLConnection
+        val connection =
+            URL(endpoint).openConnection() as HttpURLConnection
 
         return try {
             connection.requestMethod = "GET"
             connection.connectTimeout = 10_000
             connection.readTimeout = 10_000
-            connection.setRequestProperty("apikey", SUPABASE_KEY)
+
+            connection.setRequestProperty(
+                "apikey",
+                SUPABASE_KEY
+            )
+
             connection.setRequestProperty(
                 "Authorization",
                 "Bearer $SUPABASE_KEY"
             )
-            connection.setRequestProperty("Accept", "application/json")
+
+            connection.setRequestProperty(
+                "Accept",
+                "application/json"
+            )
 
             val status = connection.responseCode
 
@@ -99,10 +166,11 @@ object SupabaseCatalog {
                     connection.errorStream
                 }
 
-            val response = stream
-                ?.bufferedReader()
-                ?.use { it.readText() }
-                .orEmpty()
+            val response =
+                stream
+                    ?.bufferedReader()
+                    ?.use { it.readText() }
+                    .orEmpty()
 
             if (status !in 200..299) {
                 throw IllegalStateException(
@@ -111,6 +179,74 @@ object SupabaseCatalog {
             }
 
             response
+
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    private fun post(
+        endpoint: String,
+        body: String
+    ): String {
+        val connection =
+            URL(endpoint).openConnection() as HttpURLConnection
+
+        return try {
+            connection.requestMethod = "POST"
+            connection.doOutput = true
+            connection.connectTimeout = 10_000
+            connection.readTimeout = 10_000
+
+            connection.setRequestProperty(
+                "apikey",
+                SUPABASE_KEY
+            )
+
+            connection.setRequestProperty(
+                "Authorization",
+                "Bearer $SUPABASE_KEY"
+            )
+
+            connection.setRequestProperty(
+                "Content-Type",
+                "application/json"
+            )
+
+            connection.setRequestProperty(
+                "Accept",
+                "application/json"
+            )
+
+            connection.outputStream.use { output ->
+                output.write(
+                    body.toByteArray(Charsets.UTF_8)
+                )
+            }
+
+            val status = connection.responseCode
+
+            val stream =
+                if (status in 200..299) {
+                    connection.inputStream
+                } else {
+                    connection.errorStream
+                }
+
+            val response =
+                stream
+                    ?.bufferedReader()
+                    ?.use { it.readText() }
+                    .orEmpty()
+
+            if (status !in 200..299) {
+                throw IllegalStateException(
+                    "Supabase HTTP $status: $response"
+                )
+            }
+
+            response
+
         } finally {
             connection.disconnect()
         }

@@ -99,15 +99,24 @@ fun MainNavigation() {
         }
 
         entry<Confirmation> {
-          ConfirmationScreen(
-            appViewModel.state,
-            {
-              appViewModel.isWhatsAppPending = true
-            }
-          ) {
-            backStack.removeLastOrNull()
-          }
-        }
+  ConfirmationScreen(
+    state = appViewModel.state,
+    isSubmitting = appViewModel.isSubmittingRequest,
+    requestError = appViewModel.requestError,
+    onRequestSubmitted = { clientName, phone, onSuccess ->
+      appViewModel.submitRequest(
+        clientName = clientName,
+        phone = phone
+      ) {
+        appViewModel.isWhatsAppPending = true
+        onSuccess()
+      }
+    },
+    back = {
+      backStack.removeLastOrNull()
+    }
+  )
+}
 
         entry<ThankYou> {
           ThankYouScreen {

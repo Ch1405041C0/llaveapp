@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.llave360.data.RemoteBusiness
 import com.example.llave360.data.RemoteProduct
+import com.example.llave360.data.RequestItemInput
 import com.example.llave360.data.SupabaseCatalog
 import com.example.llave360.model.AppState
 import com.example.llave360.model.Product
@@ -20,6 +21,12 @@ class AppViewModel : ViewModel() {
         private set
 
     var isWhatsAppPending by mutableStateOf(false)
+
+    var isSubmittingRequest by mutableStateOf(false)
+        private set
+
+    var requestError by mutableStateOf<String?>(null)
+        private set
 
     var remoteBusinesses by mutableStateOf<List<RemoteBusiness>>(emptyList())
         private set
@@ -45,6 +52,7 @@ class AppViewModel : ViewModel() {
                     "LLAVE360_SUPABASE",
                     "Productos recibidos = ${products.size}: ${products.joinToString { it.name }}"
                 )
+
             } catch (e: Exception) {
                 Log.e(
                     "LLAVE360_SUPABASE",
@@ -67,14 +75,14 @@ class AppViewModel : ViewModel() {
                     .filter { it.businessId == business.id }
                     .map { remote ->
                         Product(
-    id = "remote_${remote.id}",
-    name = remote.name,
-    category = "Equipamiento",
-    price = remote.price,
-    description = remote.description,
-    imageRes = null,
-    imageUrl = remote.imageUrl
-)
+                            id = "remote_${remote.id}",
+                            name = remote.name,
+                            category = "Equipamiento",
+                            price = remote.price,
+                            description = remote.description,
+                            imageRes = null,
+                            imageUrl = remote.imageUrl
+                        )
                     }
             } else {
                 emptyList()
@@ -120,11 +128,119 @@ class AppViewModel : ViewModel() {
             quantities[id] = quantity - 1
         }
 
-        state = state.copy(quantities = quantities)
+        state = state.copy(
+            quantities = quantities
+        )
+    }
+
+    fun submitRequest(
+        clientName: String,
+        phone: String,
+        onSuccess: () -> Unit
+    ) {
+        if (isSubmittingRequest) {
+            return
+        }
+
+        requestError = null
+
+        if (clientName.isBlank()) {
+            requestError = "Ingresá tu nombre."
+            return
+        }
+
+        if (phone.isBlank()) {
+            requestError = "Ingresá tu teléfono."
+            return
+        }
+
+        val business = remoteBusinesses.firstOrNull {
+            it.name == state.businessModel
+        }
+
+        if (business == null) {
+            requestError =
+                "No se pudo identificar el negocio seleccionado."
+            return
+        }
+
+        val items = state.selectedProducts.mapNotNull {
+            (product, quantity) ->
+
+            val productId =
+                product.id
+                    .removePrefix("remote_")
+                    .toLongOrNull()
+
+            if (productId == null) {
+                null
+            } else {
+                RequestItemInput(
+                    productId = productId,
+                    quantity = quantity
+                )
+            }
+        }
+
+        if (items.isEmpty()) {
+            requestError =
+                "No hay productos válidos en la solicitud."
+            return
+        }
+
+        if (items.size != state.selectedProducts.size) {
+            requestError =
+                "Hay productos que no pudieron identificarse."
+            return
+        }
+
+        isSubmittingRequest = true
+
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val requestId =
+                    SupabaseCatalog.createRequest(
+                        clientName = clientName,
+                        phone = phone,
+                        businessId = business.id,
+                        items = items
+                    )
+
+                Log.d(
+                    "LLAVE360_SUPABASE",
+                    "Solicitud creada correctamente. ID = $requestId"
+                )
+
+                isSubmittingRequest = false
+                requestError = null
+
+                onSuccess()
+
+            } catch (e: Exception) {
+
+                Log.e(
+                    "LLAVE360_SUPABASE",
+                    "Error creando solicitud",
+                    e
+                )
+
+                isSubmittingRequest = false
+
+                requestError =
+                    e.message
+                        ?: "No se pudo enviar la solicitud."
+            }
+        }
+    }
+
+    fun clearRequestError() {
+        requestError = null
     }
 
     fun resetState() {
         state = AppState()
         isWhatsAppPending = false
+        isSubmittingRequest = false
+        requestError = null
     }
 }
