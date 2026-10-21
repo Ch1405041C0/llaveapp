@@ -1,15 +1,18 @@
 package com.example.llave360.ui.builder
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.IconButton
@@ -17,6 +20,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -37,21 +44,34 @@ fun BuilderScreen(
   continueToConfirmation: () -> Unit,
   back: () -> Unit,
 ) {
+  var selectedProduct by remember { mutableStateOf<Product?>(null) }
+
   Column(Modifier.fillMaxSize()) {
     AppHeader("04 / ARMÁ TU PROPUESTA")
 
-    Card(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)) {
+    Card(
+      Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 16.dp, vertical = 10.dp)
+    ) {
       Row(
-        Modifier.fillMaxWidth().padding(16.dp),
+        Modifier
+          .fillMaxWidth()
+          .padding(16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
       ) {
         Column {
-          Text("INVERSIÓN ESTIMADA", style = MaterialTheme.typography.labelMedium)
+          Text(
+            "INVERSIÓN ESTIMADA",
+            style = MaterialTheme.typography.labelMedium,
+          )
+
           Text(
             money(state.total),
             color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.Bold,
           )
+
           if (state.total > state.capital) {
             Text(
               "Superaste la inversión de referencia. Podés seguir sumando equipamiento.",
@@ -64,7 +84,9 @@ fun BuilderScreen(
     }
 
     LazyColumn(
-      modifier = Modifier.weight(1f).padding(horizontal = 16.dp),
+      modifier = Modifier
+        .weight(1f)
+        .padding(horizontal = 16.dp),
       verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
       item {
@@ -73,8 +95,18 @@ fun BuilderScreen(
             Modifier.padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
           ) {
-            Text(state.businessModel.uppercase(), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-            Text(state.space, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(
+              state.businessModel.uppercase(),
+              color = MaterialTheme.colorScheme.primary,
+              fontWeight = FontWeight.Bold,
+            )
+
+            Text(
+              state.space,
+              style = MaterialTheme.typography.titleLarge,
+              fontWeight = FontWeight.Bold,
+            )
+
             Text(
               "Vista previa del espacio. El equipamiento que agregues se incluirá en tu propuesta.",
               color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -82,26 +114,66 @@ fun BuilderScreen(
           }
         }
       }
+
       item {
-        Text("Equipamiento", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        Text("Sumá los módulos que quieras. La inversión estimada se actualiza automáticamente.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+          "Equipamiento",
+          style = MaterialTheme.typography.titleLarge,
+          fontWeight = FontWeight.Bold,
+        )
+
+        Text(
+          "Sumá los módulos que quieras. Tocá un producto para ver su detalle.",
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
       }
-      items(state.currentProducts, key = { it.id }) { product ->
-        ProductCard(product, state.quantities[product.id] ?: 0, add, remove)
+
+      items(
+        items = state.currentProducts,
+        key = { it.id },
+      ) { product ->
+        ProductCard(
+          product = product,
+          quantity = state.quantities[product.id] ?: 0,
+          add = add,
+          remove = remove,
+          onOpenDetail = {
+            selectedProduct = product
+          },
+        )
       }
     }
 
     Row(
-      Modifier.fillMaxWidth().padding(16.dp),
+      Modifier
+        .fillMaxWidth()
+        .padding(16.dp),
       horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-      OutlinedButton(onClick = back, modifier = Modifier.weight(1f)) { Text("VOLVER") }
+      OutlinedButton(
+        onClick = back,
+        modifier = Modifier.weight(1f),
+      ) {
+        Text("VOLVER")
+      }
+
       Button(
         onClick = continueToConfirmation,
         modifier = Modifier.weight(1f),
         enabled = state.canContinue,
-      ) { Text("VER REMITO") }
+      ) {
+        Text("VER REMITO")
+      }
     }
+  }
+
+  selectedProduct?.let { product ->
+    ProductDetailDialog(
+      product = product,
+      onDismiss = {
+        selectedProduct = null
+      },
+    )
   }
 }
 
@@ -111,46 +183,180 @@ private fun ProductCard(
   quantity: Int,
   add: (String) -> Unit,
   remove: (String) -> Unit,
+  onOpenDetail: () -> Unit,
 ) {
-  Card(Modifier.fillMaxWidth()) {
+  Card(
+    Modifier
+      .fillMaxWidth()
+      .clickable(onClick = onOpenDetail)
+  ) {
     Column {
       if (!product.imageUrl.isNullOrBlank()) {
-    AsyncImage(
-        model = product.imageUrl,
-        contentDescription = product.name,
-        modifier = Modifier.fillMaxWidth().height(140.dp),
-        contentScale = ContentScale.Crop
-    )
-} else {
-    product.imageRes?.let {
-        Image(
-            painter = painterResource(it),
-            contentDescription = product.name,
-            modifier = Modifier.fillMaxWidth().height(140.dp),
-            contentScale = ContentScale.Crop
+        AsyncImage(
+          model = product.imageUrl,
+          contentDescription = product.name,
+          modifier = Modifier
+            .fillMaxWidth()
+            .height(140.dp),
+          contentScale = ContentScale.Crop,
         )
-    }
-}
+      } else {
+        product.imageRes?.let { imageRes ->
+          Image(
+            painter = painterResource(imageRes),
+            contentDescription = product.name,
+            modifier = Modifier
+              .fillMaxWidth()
+              .height(140.dp),
+            contentScale = ContentScale.Crop,
+          )
+        }
+      }
+
       Row(
-        Modifier.fillMaxWidth().padding(16.dp),
+        Modifier
+          .fillMaxWidth()
+          .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
       ) {
         Column(Modifier.weight(1f)) {
-          Text(product.category.uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-          Text(product.name, fontWeight = FontWeight.Bold)
-          Text(product.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-          Text(money(product.price), fontWeight = FontWeight.SemiBold)
+          Text(
+            product.category.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.primary,
+          )
+
+          Text(
+            product.name,
+            fontWeight = FontWeight.Bold,
+          )
+
+          Text(
+            product.description,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+
+          Text(
+            money(product.price),
+            fontWeight = FontWeight.SemiBold,
+          )
         }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-          IconButton(onClick = { remove(product.id) }, enabled = quantity > 0) {
-            Text("−", style = MaterialTheme.typography.titleLarge)
+
+        Row(
+          verticalAlignment = Alignment.CenterVertically,
+        ) {
+          IconButton(
+            onClick = {
+              remove(product.id)
+            },
+            enabled = quantity > 0,
+          ) {
+            Text(
+              "−",
+              style = MaterialTheme.typography.titleLarge,
+            )
           }
-          Text(quantity.toString(), fontWeight = FontWeight.Bold)
-          IconButton(onClick = { add(product.id) }) {
-            Text("+", style = MaterialTheme.typography.titleLarge)
+
+          Text(
+            quantity.toString(),
+            fontWeight = FontWeight.Bold,
+          )
+
+          IconButton(
+            onClick = {
+              add(product.id)
+            },
+          ) {
+            Text(
+              "+",
+              style = MaterialTheme.typography.titleLarge,
+            )
           }
         }
       }
     }
   }
+}
+
+@Composable
+private fun ProductDetailDialog(
+  product: Product,
+  onDismiss: () -> Unit,
+) {
+  AlertDialog(
+    onDismissRequest = onDismiss,
+
+    title = {
+      Column(
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+      ) {
+        Text(
+          product.category.uppercase(),
+          style = MaterialTheme.typography.labelMedium,
+          color = MaterialTheme.colorScheme.primary,
+        )
+
+        Text(
+          product.name,
+          style = MaterialTheme.typography.titleLarge,
+          fontWeight = FontWeight.Bold,
+        )
+      }
+    },
+
+    text = {
+      Column(
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+      ) {
+        if (!product.imageUrl.isNullOrBlank()) {
+          AsyncImage(
+            model = product.imageUrl,
+            contentDescription = product.name,
+            modifier = Modifier
+              .fillMaxWidth()
+              .heightIn(
+                min = 220.dp,
+                max = 360.dp,
+              ),
+            contentScale = ContentScale.Crop,
+          )
+        } else {
+          product.imageRes?.let { imageRes ->
+            Image(
+              painter = painterResource(imageRes),
+              contentDescription = product.name,
+              modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(
+                  min = 220.dp,
+                  max = 360.dp,
+                ),
+              contentScale = ContentScale.Crop,
+            )
+          }
+        }
+
+        Text(
+          product.description,
+          style = MaterialTheme.typography.bodyLarge,
+        )
+
+        Text(
+          money(product.price),
+          style = MaterialTheme.typography.titleLarge,
+          fontWeight = FontWeight.Bold,
+          color = MaterialTheme.colorScheme.primary,
+        )
+      }
+    },
+
+    confirmButton = {
+      Button(
+        onClick = onDismiss,
+      ) {
+        Text("VOLVER")
+      }
+    },
+  )
 }
