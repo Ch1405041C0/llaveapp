@@ -1,5 +1,7 @@
 package com.example.llave360.data
 
+import com.example.llave360.BuildConfig
+
 import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
@@ -28,15 +30,22 @@ data class RequestItemInput(
 
 object SupabaseCatalog {
 
-    private const val SUPABASE_URL =
-        "https://aatnwhjdawuyixoicgib.supabase.co"
+    private val supabaseUrl: String
+        get() = BuildConfig.SUPABASE_URL.trim().trimEnd('/')
 
-    private const val SUPABASE_KEY =
-        "sb_publishable_c2SJxQRbofuEBe7U8ZZyzg_S-Bs57qE"
+    private val supabaseKey: String
+        get() = BuildConfig.supabaseKey.trim()
+
+    private fun requireConfiguration() {
+        check(supabaseUrl.isNotBlank() && supabaseKey.isNotBlank()) {
+            "Llave360 no tiene configurado Supabase. Definí SUPABASE_URL y supabaseKey en local.properties."
+        }
+    }
 
     fun loadBusinesses(): List<RemoteBusiness> {
+        requireConfiguration()
         val json = get(
-            "$SUPABASE_URL/rest/v1/businesses" +
+            "$supabaseUrl/rest/v1/businesses" +
                 "?select=id,name,description,image_url" +
                 "&active=eq.true" +
                 "&order=id.asc"
@@ -58,8 +67,9 @@ object SupabaseCatalog {
     }
 
     fun loadProducts(): List<RemoteProduct> {
+        requireConfiguration()
         val json = get(
-            "$SUPABASE_URL/rest/v1/products" +
+            "$supabaseUrl/rest/v1/products" +
                 "?select=id,business_id,name,description,price,image_url" +
                 "&active=eq.true" +
                 "&order=id.asc"
@@ -88,6 +98,8 @@ object SupabaseCatalog {
         businessId: Long,
         items: List<RequestItemInput>
     ): Long {
+        requireConfiguration()
+
         require(clientName.isNotBlank()) {
             "El nombre del cliente es obligatorio."
         }
@@ -120,7 +132,7 @@ object SupabaseCatalog {
 
         val response = post(
             endpoint =
-                "$SUPABASE_URL/rest/v1/rpc/create_request",
+                "$supabaseUrl/rest/v1/rpc/create_request",
             body = body.toString()
         )
 
@@ -144,12 +156,12 @@ object SupabaseCatalog {
 
             connection.setRequestProperty(
                 "apikey",
-                SUPABASE_KEY
+                supabaseKey
             )
 
             connection.setRequestProperty(
                 "Authorization",
-                "Bearer $SUPABASE_KEY"
+                "Bearer $supabaseKey"
             )
 
             connection.setRequestProperty(
@@ -200,12 +212,12 @@ object SupabaseCatalog {
 
             connection.setRequestProperty(
                 "apikey",
-                SUPABASE_KEY
+                supabaseKey
             )
 
             connection.setRequestProperty(
                 "Authorization",
-                "Bearer $SUPABASE_KEY"
+                "Bearer $supabaseKey"
             )
 
             connection.setRequestProperty(
