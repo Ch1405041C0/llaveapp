@@ -1,18 +1,48 @@
+import java.util.Properties
+
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.compose.compiler)
   alias(libs.plugins.kotlin.serialization)
 }
 
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { input ->
+        localProperties.load(input)
+    }
+}
+
+fun releaseConfigValue(name: String): String =
+    providers.gradleProperty(name).orNull
+        ?: localProperties.getProperty(name)
+        ?: ""
+
+fun quotedBuildConfigValue(value: String): String =
+    "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+
 android {
     namespace = "com.example.llave360"
     compileSdk = 36
     defaultConfig {
-        applicationId = "com.example.llave360"
+        applicationId = "com.aldren.llave360"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 44
+        versionName = "4.4.0"
+
+        buildConfigField(
+            "String",
+            "SUPABASE_URL",
+            quotedBuildConfigValue(releaseConfigValue("SUPABASE_URL"))
+        )
+        buildConfigField(
+            "String",
+            "SUPABASE_KEY",
+            quotedBuildConfigValue(releaseConfigValue("SUPABASE_KEY"))
+        )
     }
 
     buildTypes {
@@ -28,7 +58,7 @@ android {
     buildFeatures {
       compose = true
       aidl = false
-      buildConfig = false
+      buildConfig = true
       shaders = false
     }
 
