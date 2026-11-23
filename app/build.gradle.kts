@@ -15,13 +15,50 @@ if (localPropertiesFile.exists()) {
     }
 }
 
+val signingProperties = Properties()
+val signingPropertiesFile = rootProject.file("keystore.properties")
+
+if (signingPropertiesFile.exists()) {
+    signingPropertiesFile.inputStream().use { input ->
+        signingProperties.load(input)
+    }
+}
+
 fun releaseConfigValue(name: String): String =
     providers.gradleProperty(name).orNull
         ?: localProperties.getProperty(name)
         ?: ""
 
+fun signingConfigValue(name: String): String =
+    providers.gradleProperty(name).orNull
+        ?: signingProperties.getProperty(name)
+        ?: ""
+
 fun quotedBuildConfigValue(value: String): String =
     "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+
+val releaseStoreFilePath = signingConfigValue("RELEASE_STORE_FILE")
+val releaseStorePassword = signingConfigValue("RELEASE_STORE_PASSWORD")
+val releaseKeyAlias = signingConfigValue("RELEASE_KEY_ALIAS")
+val releaseKeyPassword = signingConfigValue("RELEASE_KEY_PASSWORD")
+val releaseSigningConfigured = listOf(
+    releaseStoreFilePath,
+    releaseStorePassword,
+    releaseKeyAlias,
+    releaseKeyPassword
+).all(String::isNotBlank)
+
+val requestedReleaseArtifact = gradle.startParameter.taskNames.any {
+    it.contains("Release", ignoreCase = true)
+}
+
+if (requestedReleaseArtifact && !releaseSigningConfigured) {
+    throw org.gradle.api.GradleException(
+        "Para generar un artefacto release, configurá RELEASE_STORE_FILE, " +
+            "RELEASE_STORE_PASSWORD, RELEASE_KEY_ALIAS y RELEASE_KEY_PASSWORD " +
+            "en keystore.properties o como propiedades de Gradle."
+    )
+}
 
 android {
     namespace = "com.example.llave360"
@@ -45,10 +82,24 @@ android {
         )
     }
 
+    signingConfigs {
+        create("release") {
+            if (releaseSigningConfigured) {
+                storeFile = rootProject.file(releaseStoreFilePath)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            if (releaseSigningConfigured) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
     compileOptions {
@@ -105,7 +156,7 @@ dependencies {
   testImplementation(libs.junit)
   testImplementation(libs.kotlinx.coroutines.test)
 
-  // Instrumented tests: jUnit rules and runners
+  // Instrumented tests: JUnit rules and runners
   androidTestImplementation(libs.androidx.test.core)
   androidTestImplementation(libs.androidx.test.ext.junit)
   androidTestImplementation(libs.androidx.test.runner)
