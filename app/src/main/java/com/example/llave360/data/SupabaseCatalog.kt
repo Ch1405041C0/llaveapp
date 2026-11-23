@@ -34,11 +34,11 @@ object SupabaseCatalog {
         get() = BuildConfig.SUPABASE_URL.trim().trimEnd('/')
 
     private val supabaseKey: String
-        get() = BuildConfig.supabaseKey.trim()
+        get() = BuildConfig.SUPABASE_KEY.trim()
 
     private fun requireConfiguration() {
         check(supabaseUrl.isNotBlank() && supabaseKey.isNotBlank()) {
-            "Llave360 no tiene configurado Supabase. Definí SUPABASE_URL y supabaseKey en local.properties."
+            "Llave360 no tiene configurado Supabase. Definí SUPABASE_URL y SUPABASE_KEY en local.properties."
         }
     }
 
